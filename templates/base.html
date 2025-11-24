@@ -1,0 +1,257 @@
+{% from "bootstrap5/nav.html" import render_nav_item, render_breadcrumb_item %}
+{% from "bootstrap5/form.html" import render_form %}
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{{ title }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    {% block styles %}
+        <!-- Bootstrap CSS -->
+        {{ bootstrap.load_css() }}
+        <style>
+            pre {
+                background: #ffffff;
+                padding: 10px;
+            }
+
+            h2 {
+                margin-top: 20px;
+            }
+
+            footer {
+                margin: 20px;
+            }
+
+            body {
+                background: floralwhite;
+            }
+
+            .dropdown-item {
+                padding: 0 10px !important;
+                font-size: 14px !important;
+            }
+
+            .tcell {width: 520px }
+
+        </style>
+    {% endblock %}
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark btn-lg" id="menu">
+    <a class="navbar-brand" href="{{ url_for('index') }}">
+        <img src="{{ url_for('static', filename='favicon.ico') }}" width="30" height="30"
+             class="align-top" alt="Source Checker">Source Checker</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="dropdown">
+        <button class="btn btn-dark btn-sm dropdown-toggle" type="button" id="dropdownMenuButton2"
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" >
+            SIEM
+        </button >
+        <ul class="dropdown-menu dropdown-menu-dark active" aria-labelledby="dropdownMenuButton2">
+            <li><a class="dropdown-item" href="/"> Проверка источников</a></li>
+            <li><a class="dropdown-item" href="/cluster"> Проверка кластеров</a></li>
+            <li><a class="dropdown-item" href="/source_types"> Проверка типов источников Bi.Zone</a></li>
+        </ul>
+    </div>
+
+    <div class="dropdown">
+        <button class="btn btn-dark btn-sm dropdown-toggle" type="button" id="dropdownMenuButton2"
+                data-bs-toggle="dropdown" aria-expanded="false">
+            MP SIEM
+        </button>
+        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="dropdownMenuButton2">
+            <li><a class="dropdown-item" href="/mpsiem"> Проверка источников</a></li>
+            <li><a class="dropdown-item" href="/mpsiem_source_types"> Проверка типов источников</a></li>
+            <li><a class="dropdown-item" href="/cluster_mpsiem"> Проверка кластеров MPSIEM</a></li>
+        </ul>
+    </div>
+
+
+    <div class="navbar-nav mr-auto">
+
+    </div>
+    <div class="navbar-right ms-auto">
+        <span class="navbar-text ms-auto">v0.5.2</span>
+    </div>
+</nav>
+
+<main class="container">
+    {% block content %}
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+        <div class="container mt-2 .bg-secondary.bg-gradient">
+        <div class="col-md-auto mt-2 mb-2">
+            {{ render_form(form, form_type='horizontal', button_style="dark") }}
+        </div>
+
+        {#        {% if progress %}#}
+        {#            <div id="spinner-border" class="spinner-border text-dark" role="status">#}
+        {#                <span class="visually-hidden">Loading...</span>#}
+        {#            </div>#}
+        {#        {% endif %}#}
+
+        {% if source_type_data %}
+            <div class="container mt-1">
+                <table id="data" class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th>Заказчик</th>
+                        <th>Тип источника</th>
+                        <th>EPS за {{ check_time }} минут</th>
+                        <th>Событий за {{ check_time }} минут</th>
+                        <th>Статус</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>{{ source_type_data.get('FIRST_domain_name') }}</td>
+                        <td>{{ source_type_data.get('LogSourceType') }}</td>
+                        <td>{{ source_type_data.get('EPS in Interval') }}</td>
+                        <td>{{ source_type_data.get('Number of Events in Interval') }}</td>
+                        <td>{{ source_type_data.get('status') }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        {% if sources %}
+            <div class="container mt-3">
+                <table id="data" class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th>Наименование источника</th>
+                        <th>Статус</th>
+                        <th>Время последнего события в SIEM</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for source in sources %}
+                        <tr>
+                            <td>{{ source }}</td>
+                            <td>{{ sources[source] }}</td>
+                            <td>{{ qradar_sources[source] }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        {% if cluster_data %}
+            <div class="container mt-3">
+                <table id="data" class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th>Наименование кластера</th>
+                        <th>Статус</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for cluster in cluster_data %}
+                        <tr>
+                            <td>{{ cluster }}</td>
+                            <td>{{ cluster_data[cluster] }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        {% if mp_cluster_data %}
+            <div>
+                <table id="data" class="table table-hover" >
+                    <thead>
+                    <tr>
+                        <th class="tcell">Заказчик</th>
+                        <th class="tcell">Инфосистема</th>
+                        <th class="tcell">Статус</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>{{ mp_cluster_data.get('customer') }}</td>
+                        <td>{{ mp_cluster_data.get('infosystem') }}</td>
+                        <td>{{ mp_cluster_data.get('status') }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        {% if data %}
+            <div class="container mt-3">
+                <table id="data" class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th>Наименование кластера</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>{{ data.get("data") }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+
+        {% if mp_data %}
+            <div class="container mt-3">
+                <table id="mp_data" class="table table-hover">
+                    <thead>
+                    <tr>
+                        <th>Наименование источника</th>
+                        <th>Статус</th>
+                        <th>Время последнего события в MP SIEM</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+
+                    {% for one_request in mp_data %}
+                        <!--<p>{{ one_request }}</p> -->
+                        <tr>
+                            <td>{{ one_request ["name"] }}</td>
+                            <td>{{ one_request ["status"] }}</td>
+                            <td>{{ one_request ["last_time_event"] }}</td>
+                        </tr>
+                   {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+        {% endif %}
+
+    {% endblock %}
+</main>
+
+{% block scripts %}
+    <!-- Optional JavaScript -->
+    {{ bootstrap.load_js() }}
+{% endblock %}
+
+
+</body>
+</html>
